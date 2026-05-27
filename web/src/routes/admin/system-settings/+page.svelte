@@ -1,6 +1,7 @@
 <script lang="ts">
   import AuthSettings from './AuthSettings.svelte';
   import BackupSettings from './BackupSettings.svelte';
+  import BifrostBrandSettings from './BifrostBrandSettings.svelte';
   import FFmpegSettings from './FFmpegSettings.svelte';
   import ImageSettings from './ImageSettings.svelte';
   import JobSettings from './JobSettings.svelte';
@@ -67,6 +68,13 @@
       subtitle: $t('admin.authentication_settings_description'),
       key: 'authentication',
       icon: mdiLockOutline,
+    },
+    {
+      component: BifrostBrandSettings,
+      title: 'Brand theme',
+      subtitle: 'Colors, wordmark, and logo applied across the app.',
+      key: 'bifrost-brand',
+      icon: mdiPaletteOutline,
     },
     {
       component: BackupSettings,

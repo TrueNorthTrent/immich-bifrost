@@ -3,6 +3,7 @@ import { memoize } from 'lodash-es';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
 import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
+import { serverThemeManager } from '$lib/managers/theme-manager.svelte';
 import { initLanguage } from '$lib/utils';
 
 type Fetch = typeof fetch;
@@ -13,6 +14,7 @@ async function _init(fetch: Fetch) {
   // https://github.com/oazapfts/oazapfts/blob/main/README.md#fetch-options
   defaults.fetch = fetch;
   await initLanguage();
+  await serverThemeManager.init();
   await serverConfigManager.init();
   await authManager.load();
 

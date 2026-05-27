@@ -1,13 +1,5 @@
 <script lang="ts">
-  /**
-   * Drop-in replacement for @immich/ui's <Logo> component. API-compatible
-   * (variant, size, class) so call sites stay one-line swaps.
-   *
-   * v1 of this component renders a clean text wordmark and an optional
-   * square icon mark — both driven by themeable values that the theme
-   * engine (next patch) will source from server config. Until that
-   * lands, defaults below are intentionally neutral / spartan.
-   */
+  import { serverThemeManager } from '$lib/managers/theme-manager.svelte';
 
   type Variant = 'icon' | 'inline';
   type Size = 'tiny' | 'small' | 'medium' | 'giant';
@@ -20,9 +12,8 @@
 
   let { variant = 'inline', size = 'medium', class: className = '' }: Props = $props();
 
-  // Until the theme engine lands these come from a constant. Theme patch
-  // will replace this with a store fetched from /api/server/theme.
-  const wordmark = 'Photos';
+  const wordmark = $derived(serverThemeManager.value.wordmark);
+  const logoSvg = $derived(serverThemeManager.value.logoSvg);
 
   const sizeStyles: Record<Size, { fontSize: string; iconSize: string; gap: string }> = {
     tiny: { fontSize: '0.875rem', iconSize: '1.25rem', gap: '0.375rem' },
@@ -44,15 +35,32 @@
   style:letter-spacing="0.02em"
   style:color="var(--bifrost-fg, currentColor)"
 >
-  <span
-    class="bifrost-logo-mark"
-    aria-hidden="true"
-    style:width={s.iconSize}
-    style:height={s.iconSize}
-    style:border-radius="6px"
-    style:background="linear-gradient(135deg, var(--bifrost-accent, #00f5ff) 0%, var(--bifrost-accent-soft, rgba(0, 245, 255, 0.45)) 100%)"
-    style:flex-shrink="0"
-  ></span>
+  {#if logoSvg}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+    <span
+      class="bifrost-logo-mark"
+      aria-hidden="true"
+      style:width={s.iconSize}
+      style:height={s.iconSize}
+      style:flex-shrink="0"
+      style:display="inline-flex"
+      style:align-items="center"
+      style:justify-content="center"
+      style:color="var(--bifrost-accent, #00f5ff)"
+    >
+      {@html logoSvg}
+    </span>
+  {:else}
+    <span
+      class="bifrost-logo-mark"
+      aria-hidden="true"
+      style:width={s.iconSize}
+      style:height={s.iconSize}
+      style:border-radius="6px"
+      style:background="linear-gradient(135deg, var(--bifrost-accent, #00f5ff) 0%, var(--bifrost-accent-soft, rgba(0, 245, 255, 0.45)) 100%)"
+      style:flex-shrink="0"
+    ></span>
+  {/if}
   {#if variant === 'inline'}
     <span style:font-size={s.fontSize}>{wordmark}</span>
   {/if}
