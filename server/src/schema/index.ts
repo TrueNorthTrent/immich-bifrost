@@ -34,6 +34,7 @@ import { AlbumTable } from 'src/schema/tables/album.table';
 import { ApiKeyTable } from 'src/schema/tables/api-key.table';
 import { AssetAuditTable } from 'src/schema/tables/asset-audit.table';
 import { AssetAudioTable, AssetKeyframeTable, AssetVideoTable } from 'src/schema/tables/asset-av.table';
+import { AssetBifrostTable } from 'src/schema/tables/asset-bifrost.table';
 import { AssetEditAuditTable } from 'src/schema/tables/asset-edit-audit.table';
 import { AssetEditTable } from 'src/schema/tables/asset-edit.table';
 import { AssetExifTable } from 'src/schema/tables/asset-exif.table';
@@ -99,6 +100,7 @@ export class ImmichDatabase {
     AlbumTable,
     ApiKeyTable,
     AssetAuditTable,
+    AssetBifrostTable,
     AssetEditTable,
     AssetEditAuditTable,
     AssetFaceTable,
@@ -195,6 +197,7 @@ export interface DB {
 
   asset: AssetTable;
   asset_audit: AssetAuditTable;
+  asset_bifrost: AssetBifrostTable;
   asset_edit: AssetEditTable;
   asset_edit_audit: AssetEditAuditTable;
   asset_exif: AssetExifTable;
