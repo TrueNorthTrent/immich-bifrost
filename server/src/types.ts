@@ -494,6 +494,17 @@ export type MemoriesState = {
   lastOnThisDayDate: string;
 };
 export type MediaLocation = { location: string };
+export type ServerThemeState = {
+  bg?: string;
+  surface?: string;
+  accent?: string;
+  accentSoft?: string;
+  fg?: string;
+  border?: string;
+  font?: string;
+  wordmark?: string;
+  logoSvg?: string;
+};
 
 export interface SystemMetadata extends Record<SystemMetadataKey, Record<string, any>> {
   [SystemMetadataKey.AdminOnboarding]: { isOnboarded: boolean };
@@ -502,6 +513,7 @@ export interface SystemMetadata extends Record<SystemMetadataKey, Record<string,
   [SystemMetadataKey.MaintenanceMode]: MaintenanceModeState;
   [SystemMetadataKey.MediaLocation]: MediaLocation;
   [SystemMetadataKey.ReverseGeocodingState]: { lastUpdate?: string; lastImportFileName?: string };
+  [SystemMetadataKey.ServerTheme]: ServerThemeState;
   [SystemMetadataKey.SystemConfig]: DeepPartial<SystemConfig>;
   [SystemMetadataKey.SystemFlags]: DeepPartial<SystemFlags>;
   [SystemMetadataKey.VersionCheckState]: VersionCheckMetadata;

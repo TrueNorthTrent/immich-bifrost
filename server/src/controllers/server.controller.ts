@@ -14,7 +14,11 @@ import {
   ServerVersionHistoryResponseDto,
   ServerVersionResponseDto,
 } from 'src/dtos/server.dto';
-import { VersionCheckStateResponseDto } from 'src/dtos/system-metadata.dto';
+import {
+  ServerThemeDto,
+  ServerThemeUpdateDto,
+  VersionCheckStateResponseDto,
+} from 'src/dtos/system-metadata.dto';
 import { ApiTag, Permission } from 'src/enum';
 import { Authenticated } from 'src/middleware/auth.guard';
 import { ServerService } from 'src/services/server.service';
@@ -178,5 +182,26 @@ export class ServerController {
   })
   getVersionCheck(): Promise<VersionCheckStateResponseDto> {
     return this.systemMetadataService.getVersionCheckState();
+  }
+
+  @Get('theme')
+  @Endpoint({
+    summary: 'Get server theme',
+    description: 'Retrieve the active brand theme tokens. Public so the login screen can render styled.',
+    history: new HistoryBuilder().added('v3.0.0').alpha('v3.0.0'),
+  })
+  getServerTheme(): Promise<ServerThemeDto> {
+    return this.systemMetadataService.getServerTheme();
+  }
+
+  @Put('theme')
+  @Authenticated({ permission: Permission.SystemMetadataUpdate, admin: true })
+  @Endpoint({
+    summary: 'Update server theme',
+    description: 'Persist brand theme tokens. Admin only. Partial payloads merge over existing values.',
+    history: new HistoryBuilder().added('v3.0.0').alpha('v3.0.0'),
+  })
+  updateServerTheme(@Body() dto: ServerThemeUpdateDto): Promise<ServerThemeDto> {
+    return this.systemMetadataService.updateServerTheme(dto);
   }
 }
