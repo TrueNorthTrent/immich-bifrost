@@ -3516,6 +3516,128 @@
         "x-immich-state": "Stable"
       }
     },
+    "/assets/{id}/bifrost": {
+      "get": {
+        "description": "Retrieve fork-only metadata (NSFW score, attractive rating) for an asset.",
+        "operationId": "getAssetBifrost",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetBifrostResponseDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Get asset bifrost sidecar",
+        "tags": [
+          "Assets"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v3.0.0",
+            "state": "Added"
+          },
+          {
+            "version": "v3.0.0",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-permission": "asset.read",
+        "x-immich-state": "Alpha"
+      },
+      "put": {
+        "description": "Patch the asset_bifrost row. Partial updates merge; pass null to clear a field.",
+        "operationId": "updateAssetBifrost",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetBifrostUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetBifrostResponseDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Update asset bifrost sidecar",
+        "tags": [
+          "Assets"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v3.0.0",
+            "state": "Added"
+          },
+          {
+            "version": "v3.0.0",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-permission": "asset.update",
+        "x-immich-state": "Alpha"
+      }
+    },
     "/assets/{id}/edits": {
       "delete": {
         "description": "Removes all edit actions (crop, rotate, mirror) associated with the specified asset.",
@@ -10734,6 +10856,95 @@
         "x-immich-state": "Stable"
       }
     },
+    "/server/theme": {
+      "get": {
+        "description": "Retrieve the active brand theme tokens. Public so the login screen can render styled.",
+        "operationId": "getServerTheme",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerThemeDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Get server theme",
+        "tags": [
+          "Server"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v3.0.0",
+            "state": "Added"
+          },
+          {
+            "version": "v3.0.0",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-state": "Alpha"
+      },
+      "put": {
+        "description": "Persist brand theme tokens. Admin only. Partial payloads merge over existing values.",
+        "operationId": "updateServerTheme",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServerThemeUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerThemeDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Update server theme",
+        "tags": [
+          "Server"
+        ],
+        "x-immich-admin-only": true,
+        "x-immich-history": [
+          {
+            "version": "v3.0.0",
+            "state": "Added"
+          },
+          {
+            "version": "v3.0.0",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-permission": "systemMetadata.update",
+        "x-immich-state": "Alpha"
+      }
+    },
     "/server/version": {
       "get": {
         "description": "Retrieve the current server version in semantic versioning (semver) format.",
@@ -13456,6 +13667,28 @@
             }
           },
           {
+            "name": "minAttractiveScore",
+            "required": false,
+            "in": "query",
+            "description": "Bifrost fork: only return assets whose attractive_score is >= this value (range 1..10)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nsfwScoreMax",
+            "required": false,
+            "in": "query",
+            "description": "Bifrost fork: only return assets whose nsfw_score is <= this value (range 0..1)",
+            "schema": {
+              "minimum": 0,
+              "maximum": 1,
+              "type": "number"
+            }
+          },
+          {
             "name": "order",
             "required": false,
             "in": "query",
@@ -13652,6 +13885,28 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "minAttractiveScore",
+            "required": false,
+            "in": "query",
+            "description": "Bifrost fork: only return assets whose attractive_score is >= this value (range 1..10)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nsfwScoreMax",
+            "required": false,
+            "in": "query",
+            "description": "Bifrost fork: only return assets whose nsfw_score is <= this value (range 0..1)",
+            "schema": {
+              "minimum": 0,
+              "maximum": 1,
+              "type": "number"
             }
           },
           {
@@ -15891,6 +16146,71 @@
             },
             "minItems": 1,
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "AssetBifrostResponseDto": {
+        "properties": {
+          "assetId": {
+            "description": "Asset ID",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+            "type": "string"
+          },
+          "attractiveRatedAt": {
+            "description": "When the attractive score was last set",
+            "example": "2024-01-01T00:00:00.000Z",
+            "format": "date-time",
+            "nullable": true,
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "attractiveScore": {
+            "description": "Personal attractive scale, manual 1..10 rating",
+            "maximum": 10,
+            "minimum": 1,
+            "nullable": true,
+            "type": "integer"
+          },
+          "nsfwScore": {
+            "description": "NSFW score 0..1 from the moderation worker",
+            "maximum": 1,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number"
+          },
+          "nsfwScoredAt": {
+            "description": "When the NSFW score was last computed",
+            "example": "2024-01-01T00:00:00.000Z",
+            "format": "date-time",
+            "nullable": true,
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetId",
+          "attractiveRatedAt",
+          "attractiveScore",
+          "nsfwScore",
+          "nsfwScoredAt"
+        ],
+        "type": "object"
+      },
+      "AssetBifrostUpdateDto": {
+        "properties": {
+          "attractiveScore": {
+            "maximum": 10,
+            "minimum": 1,
+            "nullable": true,
+            "type": "integer"
+          },
+          "nsfwScore": {
+            "maximum": 1,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number"
           }
         },
         "type": "object"
@@ -21437,6 +21757,99 @@
           "diskUse",
           "diskUseRaw"
         ],
+        "type": "object"
+      },
+      "ServerThemeDto": {
+        "properties": {
+          "accent": {
+            "description": "Primary accent color",
+            "type": "string"
+          },
+          "accentSoft": {
+            "description": "Soft accent (gradient companion / muted)",
+            "type": "string"
+          },
+          "bg": {
+            "description": "Background color (CSS color value)",
+            "type": "string"
+          },
+          "border": {
+            "description": "Border color",
+            "type": "string"
+          },
+          "fg": {
+            "description": "Foreground / text color",
+            "type": "string"
+          },
+          "font": {
+            "description": "CSS font-family stack",
+            "type": "string"
+          },
+          "logoSvg": {
+            "description": "Optional inline SVG markup for the logo mark; empty string uses the gradient default",
+            "type": "string"
+          },
+          "surface": {
+            "description": "Surface / card color",
+            "type": "string"
+          },
+          "wordmark": {
+            "description": "Brand wordmark text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accent",
+          "accentSoft",
+          "bg",
+          "border",
+          "fg",
+          "font",
+          "logoSvg",
+          "surface",
+          "wordmark"
+        ],
+        "type": "object"
+      },
+      "ServerThemeUpdateDto": {
+        "properties": {
+          "accent": {
+            "description": "Primary accent color",
+            "type": "string"
+          },
+          "accentSoft": {
+            "description": "Soft accent (gradient companion / muted)",
+            "type": "string"
+          },
+          "bg": {
+            "description": "Background color (CSS color value)",
+            "type": "string"
+          },
+          "border": {
+            "description": "Border color",
+            "type": "string"
+          },
+          "fg": {
+            "description": "Foreground / text color",
+            "type": "string"
+          },
+          "font": {
+            "description": "CSS font-family stack",
+            "type": "string"
+          },
+          "logoSvg": {
+            "description": "Optional inline SVG markup for the logo mark; empty string uses the gradient default",
+            "type": "string"
+          },
+          "surface": {
+            "description": "Surface / card color",
+            "type": "string"
+          },
+          "wordmark": {
+            "description": "Brand wordmark text",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "ServerVersionHistoryResponseDto": {
