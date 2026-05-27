@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import DetailPanelBifrost from '$lib/components/asset-viewer/DetailPanelBifrost.svelte';
   import DetailPanelDate from '$lib/components/asset-viewer/DetailPanelDate.svelte';
   import DetailPanelDescription from '$lib/components/asset-viewer/DetailPanelDescription.svelte';
   import DetailPanelLocation from '$lib/components/asset-viewer/DetailPanelLocation.svelte';
@@ -149,6 +150,7 @@
 
     <DetailPanelDescription {asset} {isOwner} />
     <DetailPanelRating {asset} {isOwner} />
+    <DetailPanelBifrost {asset} {isOwner} />
     <DetailPanelPeople {asset} {isOwner} {previousRoute} />
 
     <div class="p-4">
