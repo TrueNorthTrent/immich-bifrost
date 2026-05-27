@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Card, CardBody, CardHeader, Heading, immichLogo, Logo, VStack } from '@immich/ui';
+  import { Card, CardBody, CardHeader, Heading, VStack } from '@immich/ui';
+  import BifrostLogo from '$lib/components/elements/BifrostLogo.svelte';
   import type { Snippet } from 'svelte';
   interface Props {
     title?: string;
@@ -13,23 +14,14 @@
 
 <section class="relative isolate flex min-h-dvh min-w-dvw items-center justify-center">
   {#if withBackdrop}
-    <div class="absolute -z-10 flex size-full place-content-center place-items-center">
-      <img
-        src={immichLogo}
-        class="mx-auto mb-2 h-full max-w-(--breakpoint-md) overflow-hidden antialiased"
-        alt="Immich logo"
-      />
-      <div
-        class="absolute inset-s-0 top-0 h-[99%] w-full bg-transparent backdrop-blur-[200px] dark:bg-immich-dark-bg/20"
-      ></div>
-    </div>
+    <div class="absolute -z-10 size-full" style:background="radial-gradient(ellipse at center, var(--bifrost-surface, rgba(10, 22, 40, 0.6)) 0%, transparent 70%)"></div>
   {/if}
 
   <Card color="secondary" class="m-2 w-full max-w-xl border">
     {#if withHeader}
       <CardHeader class="mt-6">
         <VStack>
-          <Logo variant="icon" size="giant" />
+          <BifrostLogo variant="icon" size="giant" />
           <Heading size="large" class="font-semibold" color="primary" tag="h1">{title}</Heading>
         </VStack>
       </CardHeader>
