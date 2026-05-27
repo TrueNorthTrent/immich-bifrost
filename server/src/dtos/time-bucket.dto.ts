@@ -29,6 +29,19 @@ const TimeBucketQueryBaseSchema = z
     visibility: AssetVisibilitySchema.optional().describe(
       'Filter by asset visibility status (ARCHIVE, TIMELINE, HIDDEN, LOCKED)',
     ),
+    nsfwScoreMax: z.coerce
+      .number()
+      .min(0)
+      .max(1)
+      .optional()
+      .describe('Bifrost fork: only return assets whose nsfw_score is <= this value (range 0..1)'),
+    minAttractiveScore: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(10)
+      .optional()
+      .describe('Bifrost fork: only return assets whose attractive_score is >= this value (range 1..10)'),
     withCoordinates: stringToBool.optional().describe('Include location data in the response'),
     key: z.string().optional(),
     slug: z.string().optional(),

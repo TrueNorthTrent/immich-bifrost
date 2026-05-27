@@ -85,6 +85,8 @@ interface AssetBuilderOptions {
   visibility?: AssetVisibility;
   withCoordinates?: boolean;
   bbox?: BoundingBox;
+  nsfwScoreMax?: number;
+  minAttractiveScore?: number;
 }
 
 export interface TimeBucketOptions extends AssetBuilderOptions {
@@ -750,7 +752,22 @@ export class AssetRepository {
           .$if(options.isDuplicate !== undefined, (qb) =>
             qb.where('asset.duplicateId', options.isDuplicate ? 'is not' : 'is', null),
           )
-          .$if(!!options.tagId, (qb) => withTagId(qb, options.tagId!)),
+          .$if(!!options.tagId, (qb) => withTagId(qb, options.tagId!))
+          .$if(options.nsfwScoreMax !== undefined || options.minAttractiveScore !== undefined, (qb) =>
+            qb
+              .leftJoin('asset_bifrost', 'asset.id', 'asset_bifrost.assetId')
+              .$if(options.nsfwScoreMax !== undefined, (inner) =>
+                inner.where((eb) =>
+                  eb.or([
+                    eb('asset_bifrost.nsfwScore', 'is', null),
+                    eb('asset_bifrost.nsfwScore', '<=', options.nsfwScoreMax!),
+                  ]),
+                ),
+              )
+              .$if(options.minAttractiveScore !== undefined, (inner) =>
+                inner.where('asset_bifrost.attractiveScore', '>=', options.minAttractiveScore!),
+              ),
+          ),
       )
       .selectFrom('asset')
       .select(sql<string>`("timeBucket" AT TIME ZONE 'UTC')::date::text`.as('timeBucket'))
@@ -864,6 +881,21 @@ export class AssetRepository {
           )
           .$if(!!options.isTrashed, (qb) => qb.where('asset.status', '!=', AssetStatus.Deleted))
           .$if(!!options.tagId, (qb) => withTagId(qb, options.tagId!))
+          .$if(options.nsfwScoreMax !== undefined || options.minAttractiveScore !== undefined, (qb) =>
+            qb
+              .leftJoin('asset_bifrost', 'asset.id', 'asset_bifrost.assetId')
+              .$if(options.nsfwScoreMax !== undefined, (inner) =>
+                inner.where((eb) =>
+                  eb.or([
+                    eb('asset_bifrost.nsfwScore', 'is', null),
+                    eb('asset_bifrost.nsfwScore', '<=', options.nsfwScoreMax!),
+                  ]),
+                ),
+              )
+              .$if(options.minAttractiveScore !== undefined, (inner) =>
+                inner.where('asset_bifrost.attractiveScore', '>=', options.minAttractiveScore!),
+              ),
+          )
           .orderBy(
             options.orderBy == AssetOrderBy.CreatedAt
               ? sql`"createdAt"`
