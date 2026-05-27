@@ -905,6 +905,22 @@ export type UpdateAssetDto = {
     rating?: number | null;
     visibility?: AssetVisibility;
 };
+export type AssetBifrostResponseDto = {
+    /** Asset ID */
+    assetId: string;
+    /** When the attractive score was last set */
+    attractiveRatedAt: string | null;
+    /** Personal attractive scale, manual 1..10 rating */
+    attractiveScore: number | null;
+    /** NSFW score 0..1 from the moderation worker */
+    nsfwScore: number | null;
+    /** When the NSFW score was last computed */
+    nsfwScoredAt: string | null;
+};
+export type AssetBifrostUpdateDto = {
+    attractiveScore?: number | null;
+    nsfwScore?: number | null;
+};
 export type CropParameters = {
     /** Height of the crop */
     height: number;
@@ -2066,6 +2082,46 @@ export type ServerStorageResponseDto = {
     diskUse: string;
     /** Used disk space in bytes */
     diskUseRaw: number;
+};
+export type ServerThemeDto = {
+    /** Primary accent color */
+    accent: string;
+    /** Soft accent (gradient companion / muted) */
+    accentSoft: string;
+    /** Background color (CSS color value) */
+    bg: string;
+    /** Border color */
+    border: string;
+    /** Foreground / text color */
+    fg: string;
+    /** CSS font-family stack */
+    font: string;
+    /** Optional inline SVG markup for the logo mark; empty string uses the gradient default */
+    logoSvg: string;
+    /** Surface / card color */
+    surface: string;
+    /** Brand wordmark text */
+    wordmark: string;
+};
+export type ServerThemeUpdateDto = {
+    /** Primary accent color */
+    accent?: string;
+    /** Soft accent (gradient companion / muted) */
+    accentSoft?: string;
+    /** Background color (CSS color value) */
+    bg?: string;
+    /** Border color */
+    border?: string;
+    /** Foreground / text color */
+    fg?: string;
+    /** CSS font-family stack */
+    font?: string;
+    /** Optional inline SVG markup for the logo mark; empty string uses the gradient default */
+    logoSvg?: string;
+    /** Surface / card color */
+    surface?: string;
+    /** Brand wordmark text */
+    wordmark?: string;
 };
 export type ServerVersionResponseDto = {
     /** Major version number */
@@ -4039,6 +4095,35 @@ export function updateAsset({ id, updateAssetDto }: {
     })));
 }
 /**
+ * Get asset bifrost sidecar
+ */
+export function getAssetBifrost({ id }: {
+    id: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: AssetBifrostResponseDto;
+    }>(`/assets/${encodeURIComponent(id)}/bifrost`, {
+        ...opts
+    }));
+}
+/**
+ * Update asset bifrost sidecar
+ */
+export function updateAssetBifrost({ id, assetBifrostUpdateDto }: {
+    id: string;
+    assetBifrostUpdateDto: AssetBifrostUpdateDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: AssetBifrostResponseDto;
+    }>(`/assets/${encodeURIComponent(id)}/bifrost`, oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: assetBifrostUpdateDto
+    })));
+}
+/**
  * Remove edits from an existing asset
  */
 export function removeAssetEdits({ id }: {
@@ -5700,6 +5785,32 @@ export function getStorage(opts?: Oazapfts.RequestOpts) {
     }));
 }
 /**
+ * Get server theme
+ */
+export function getServerTheme(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: ServerThemeDto;
+    }>("/server/theme", {
+        ...opts
+    }));
+}
+/**
+ * Update server theme
+ */
+export function updateServerTheme({ serverThemeUpdateDto }: {
+    serverThemeUpdateDto: ServerThemeUpdateDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: ServerThemeDto;
+    }>("/server/theme", oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: serverThemeUpdateDto
+    })));
+}
+/**
  * Get server version
  */
 export function getServerVersion(opts?: Oazapfts.RequestOpts) {
@@ -6311,12 +6422,14 @@ export function tagAssets({ id, bulkIdsDto }: {
 /**
  * Get time bucket
  */
-export function getTimeBucket({ albumId, bbox, isFavorite, isTrashed, key, order, orderBy, personId, slug, tagId, timeBucket, userId, visibility, withCoordinates, withPartners, withStacked }: {
+export function getTimeBucket({ albumId, bbox, isFavorite, isTrashed, key, minAttractiveScore, nsfwScoreMax, order, orderBy, personId, slug, tagId, timeBucket, userId, visibility, withCoordinates, withPartners, withStacked }: {
     albumId?: string;
     bbox?: string;
     isFavorite?: boolean;
     isTrashed?: boolean;
     key?: string;
+    minAttractiveScore?: number;
+    nsfwScoreMax?: number;
     order?: AssetOrder;
     orderBy?: AssetOrderBy;
     personId?: string;
@@ -6338,6 +6451,8 @@ export function getTimeBucket({ albumId, bbox, isFavorite, isTrashed, key, order
         isFavorite,
         isTrashed,
         key,
+        minAttractiveScore,
+        nsfwScoreMax,
         order,
         orderBy,
         personId,
@@ -6356,12 +6471,14 @@ export function getTimeBucket({ albumId, bbox, isFavorite, isTrashed, key, order
 /**
  * Get time buckets
  */
-export function getTimeBuckets({ albumId, bbox, isFavorite, isTrashed, key, order, orderBy, personId, slug, tagId, userId, visibility, withCoordinates, withPartners, withStacked }: {
+export function getTimeBuckets({ albumId, bbox, isFavorite, isTrashed, key, minAttractiveScore, nsfwScoreMax, order, orderBy, personId, slug, tagId, userId, visibility, withCoordinates, withPartners, withStacked }: {
     albumId?: string;
     bbox?: string;
     isFavorite?: boolean;
     isTrashed?: boolean;
     key?: string;
+    minAttractiveScore?: number;
+    nsfwScoreMax?: number;
     order?: AssetOrder;
     orderBy?: AssetOrderBy;
     personId?: string;
@@ -6382,6 +6499,8 @@ export function getTimeBuckets({ albumId, bbox, isFavorite, isTrashed, key, orde
         isFavorite,
         isTrashed,
         key,
+        minAttractiveScore,
+        nsfwScoreMax,
         order,
         orderBy,
         personId,

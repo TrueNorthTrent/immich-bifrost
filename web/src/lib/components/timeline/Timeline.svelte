@@ -19,6 +19,8 @@
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset, TimelineManagerOptions, ViewportTopMonth } from '$lib/managers/timeline-manager/types';
   import { assetsSnapshot } from '$lib/managers/timeline-manager/utils.svelte';
+  import BifrostGridFilterBar from '$lib/components/timeline/BifrostGridFilterBar.svelte';
+  import { bifrostGridFilter } from '$lib/stores/bifrost-grid-filter.svelte';
   import { mediaQueryManager } from '$lib/stores/media-query-manager.svelte';
   import { isAssetViewerRoute, navigate } from '$lib/utils/navigation';
   import { getTimes, type ScrubberListener } from '$lib/utils/timeline-util';
@@ -86,7 +88,17 @@
 
   timelineManager = new TimelineManager();
   onDestroy(() => timelineManager.destroy());
-  $effect(() => options && void timelineManager.updateOptions(options));
+  $effect(() => {
+    if (!options) {
+      return;
+    }
+    const merged: TimelineManagerOptions = {
+      ...options,
+      nsfwScoreMax: bifrostGridFilter.nsfwScoreMax ?? undefined,
+      minAttractiveScore: bifrostGridFilter.minAttractiveScore ?? undefined,
+    };
+    void timelineManager.updateOptions(merged);
+  });
 
   let scrollableElement: HTMLElement | undefined = $state();
   let timelineElement: HTMLElement | undefined = $state();
@@ -613,6 +625,9 @@
   />
 {/if}
 
+<div class="relative h-full">
+  <BifrostGridFilterBar />
+
 <!-- Right margin MUST be equal to the width of scrubber -->
 <section
   id="asset-grid"
@@ -723,6 +738,7 @@
     ></div>
   </section>
 </section>
+</div>
 
 <Portal target="body">
   {#if assetViewerManager.isViewing}
