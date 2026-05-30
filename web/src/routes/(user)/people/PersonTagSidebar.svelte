@@ -14,19 +14,34 @@
     tags: PersonTagDto[];
     selectedTagIds: string[];
     overrideDefaultHidden: boolean;
+    yearFilter: number | undefined;
     onToggle: (tagId: string) => void | Promise<void>;
     onClear: () => void | Promise<void>;
     onToggleAll: () => void | Promise<void>;
+    onYearSelect: (year: number | undefined) => void | Promise<void>;
     onTagsChanged: (tags: PersonTagDto[]) => void;
   }
 
-  let { tags, selectedTagIds, overrideDefaultHidden, onToggle, onClear, onToggleAll, onTagsChanged }: Props = $props();
+  let {
+    tags,
+    selectedTagIds,
+    overrideDefaultHidden,
+    yearFilter,
+    onToggle,
+    onClear,
+    onToggleAll,
+    onYearSelect,
+    onTagsChanged,
+  }: Props = $props();
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 8 }, (_, i) => currentYear - i);
 
   let newTagName = $state('');
   let parentForNew = $state<string | null>(null);
   let savingNew = $state(false);
 
-  const hasSelection = $derived(selectedTagIds.length > 0 || overrideDefaultHidden);
+  const hasSelection = $derived(selectedTagIds.length > 0 || overrideDefaultHidden || yearFilter !== undefined);
 
   const refresh = async () => {
     try {
@@ -109,6 +124,22 @@
         </button>
       {/if}
     </div>
+  </div>
+
+  <div class="mb-2 flex flex-wrap gap-1.5 text-xs text-gray-600 dark:text-gray-300">
+    <span class="self-center text-gray-400">Seen in:</span>
+    {#each years as year (year)}
+      {@const active = yearFilter === year}
+      <button
+        type="button"
+        class="rounded-md border px-2 py-0.5 transition-colors {active
+          ? 'border-immich-primary bg-immich-primary text-white dark:border-immich-dark-primary dark:bg-immich-dark-primary dark:text-immich-dark-gray'
+          : 'border-gray-300 hover:border-immich-primary hover:text-immich-primary dark:border-gray-700'}"
+        onclick={() => onYearSelect(year)}
+      >
+        {year}
+      </button>
+    {/each}
   </div>
 
   <div class="flex flex-wrap gap-2">

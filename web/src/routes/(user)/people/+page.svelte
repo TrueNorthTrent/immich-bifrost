@@ -53,6 +53,7 @@
   let sortOrder = $state<SortOrder>(data.filters.sortOrder);
   let selectedTagIds = $state<string[]>(data.filters.tagIds);
   let overrideDefaultHidden = $state<boolean>(data.filters.overrideDefaultHidden);
+  let yearFilter = $state<number | undefined>(data.filters.year);
   let tags = $state<PersonTagDto[]>(data.tags);
   let tagPickerPerson = $state<PersonResponseExtended | null>(null);
 
@@ -91,6 +92,7 @@
                   page: startingPage + i,
                   sortBy,
                   sortOrder,
+                  year: yearFilter,
                   tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
                   overrideDefaultHidden,
                 });
@@ -122,6 +124,7 @@
         page: nextPage,
         sortBy,
         sortOrder,
+        year: yearFilter,
         tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
         overrideDefaultHidden,
       });
@@ -243,12 +246,19 @@
     url.searchParams.delete('sortOrder');
     url.searchParams.delete('tagId');
     url.searchParams.delete('all');
+    url.searchParams.delete('year');
     if (sortBy !== 'default') url.searchParams.set('sortBy', sortBy);
     if (sortOrder !== 'desc') url.searchParams.set('sortOrder', sortOrder);
     for (const id of selectedTagIds) url.searchParams.append('tagId', id);
     if (overrideDefaultHidden) url.searchParams.set('all', '1');
+    if (yearFilter) url.searchParams.set('year', String(yearFilter));
     sessionStorage.removeItem(SessionStorageKey.INFINITE_SCROLL_PAGE);
     await goto(url, { keepFocus: true, noScroll: false, invalidateAll: true });
+  };
+
+  const onYearSelect = async (year: number | undefined) => {
+    yearFilter = yearFilter === year ? undefined : year;
+    await applyFilters();
   };
 
   const onSortChange = async (event: Event) => {
@@ -269,9 +279,10 @@
   };
 
   const onClearTags = async () => {
-    if (selectedTagIds.length === 0 && !overrideDefaultHidden) return;
+    if (selectedTagIds.length === 0 && !overrideDefaultHidden && yearFilter === undefined) return;
     selectedTagIds = [];
     overrideDefaultHidden = false;
+    yearFilter = undefined;
     await applyFilters();
   };
 
@@ -442,9 +453,11 @@
     {tags}
     {selectedTagIds}
     {overrideDefaultHidden}
+    {yearFilter}
     onToggle={onToggleTag}
     onClear={onClearTags}
     onToggleAll={onToggleAll}
+    onYearSelect={onYearSelect}
     onTagsChanged={onTagsChanged}
   />
 

@@ -24,12 +24,15 @@ export const load = (async ({ url }) => {
   const sortOrder = parseOrder(url.searchParams.get('sortOrder'));
   const tagIds = url.searchParams.getAll('tagId');
   const overrideDefaultHidden = url.searchParams.get('all') === '1';
+  const yearRaw = url.searchParams.get('year');
+  const year = yearRaw && /^\d{4}$/.test(yearRaw) ? Number(yearRaw) : undefined;
 
   const [people, tagList] = await Promise.all([
     fetchPeopleExtended({
       withHidden: true,
       sortBy,
       sortOrder,
+      year,
       tagIds: tagIds.length > 0 ? tagIds : undefined,
       overrideDefaultHidden,
     }),
@@ -40,7 +43,7 @@ export const load = (async ({ url }) => {
   return {
     people,
     tags: tagList.tags,
-    filters: { sortBy, sortOrder, tagIds, overrideDefaultHidden },
+    filters: { sortBy, sortOrder, tagIds, overrideDefaultHidden, year },
     meta: {
       title: $t('people'),
     },
