@@ -16,6 +16,11 @@ export interface PersonSearchOptions {
   minimumFaceCount: number;
   withHidden: boolean;
   closestFaceAssetId?: string;
+  sortBy?: 'default' | 'name' | 'firstSeen' | 'lastSeen';
+  sortOrder?: 'asc' | 'desc';
+  year?: number;
+  tagIds?: string[];
+  excludeTagIds?: string[];
 }
 
 export interface PersonNameSearchOptions {
@@ -150,9 +155,21 @@ export class PersonRepository {
 
   @GenerateSql({ params: [{ take: 1, skip: 0 }, DummyValue.UUID] })
   async getAllForUser(pagination: PaginationOptions, userId: string, options?: PersonSearchOptions) {
+    const sortBy = options?.sortBy ?? 'default';
+    const sortOrder = options?.sortOrder ?? (sortBy === 'name' ? 'asc' : 'desc');
+    const tagIds = options?.tagIds && options.tagIds.length > 0 ? options.tagIds : undefined;
+    const excludeTagIds = options?.excludeTagIds && options.excludeTagIds.length > 0 ? options.excludeTagIds : undefined;
+
     const items = await this.db
       .selectFrom('person')
       .selectAll('person')
+      .select((eb) =>
+        eb
+          .selectFrom('person_to_tag')
+          .select(sql<string[]>`coalesce(array_agg(person_to_tag."tagId"), ARRAY[]::uuid[])`.as('tagIds'))
+          .whereRef('person_to_tag.personId', '=', 'person.id')
+          .as('tagIds'),
+      )
       .innerJoin('asset_face', 'asset_face.personId', 'person.id')
       .innerJoin('asset', (join) =>
         join
@@ -163,8 +180,33 @@ export class PersonRepository {
       .where('person.ownerId', '=', userId)
       .where('asset_face.deletedAt', 'is', null)
       .where('asset_face.isVisible', 'is', true)
-      .orderBy('person.isHidden', 'asc')
-      .orderBy('person.isFavorite', 'desc')
+      .$if(!!options?.year, (qb) =>
+        qb.where(sql<boolean>`EXTRACT(YEAR FROM "asset"."localDateTime") = ${options!.year}`),
+      )
+      .$if(!!tagIds, (qb) =>
+        qb.where((eb) =>
+          eb.exists(
+            eb
+              .selectFrom('person_to_tag')
+              .select(sql.lit(1).as('one'))
+              .whereRef('person_to_tag.personId', '=', 'person.id')
+              .where('person_to_tag.tagId', 'in', tagIds!),
+          ),
+        ),
+      )
+      .$if(!!excludeTagIds, (qb) =>
+        qb.where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom('person_to_tag')
+                .select(sql.lit(1).as('one'))
+                .whereRef('person_to_tag.personId', '=', 'person.id')
+                .where('person_to_tag.tagId', 'in', excludeTagIds!),
+            ),
+          ),
+        ),
+      )
       .having((eb) =>
         eb.or([
           eb('person.name', '!=', ''),
@@ -189,8 +231,26 @@ export class PersonRepository {
           ),
         ),
       )
-      .$if(!options?.closestFaceAssetId, (qb) =>
+      .$if(!options?.closestFaceAssetId && sortBy === 'firstSeen', (qb) =>
         qb
+          .orderBy('person.firstSeenAt', (om) => (sortOrder === 'asc' ? om.asc().nullsLast() : om.desc().nullsLast()))
+          .orderBy('person.createdAt', 'desc'),
+      )
+      .$if(!options?.closestFaceAssetId && sortBy === 'lastSeen', (qb) =>
+        qb
+          .orderBy('person.lastSeenAt', (om) => (sortOrder === 'asc' ? om.asc().nullsLast() : om.desc().nullsLast()))
+          .orderBy('person.createdAt', 'desc'),
+      )
+      .$if(!options?.closestFaceAssetId && sortBy === 'name', (qb) =>
+        qb
+          .orderBy(sql`NULLIF(person.name, '') is null`, 'asc')
+          .orderBy(sql`NULLIF(person.name, '')`, (om) => (sortOrder === 'desc' ? om.desc().nullsLast() : om.asc().nullsLast()))
+          .orderBy('person.createdAt'),
+      )
+      .$if(!options?.closestFaceAssetId && sortBy === 'default', (qb) =>
+        qb
+          .orderBy('person.isHidden', 'asc')
+          .orderBy('person.isFavorite', 'desc')
           .orderBy(sql`NULLIF(person.name, '') is null`, 'asc')
           .orderBy((eb) => eb.fn.count('asset_face.assetId'), 'desc')
           .orderBy(sql`NULLIF(person.name, '')`, (om) => om.asc().nullsLast())
@@ -202,6 +262,16 @@ export class PersonRepository {
       .execute();
 
     return paginationHelper(items, pagination.take);
+  }
+
+  @GenerateSql({ params: [DummyValue.UUID] })
+  getDefaultHiddenTagIds(userId: string) {
+    return this.db
+      .selectFrom('person_tag')
+      .select('person_tag.id')
+      .where('person_tag.ownerId', '=', userId)
+      .where('person_tag.defaultHidden', '=', true)
+      .execute();
   }
 
   @GenerateSql()

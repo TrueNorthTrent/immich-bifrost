@@ -13,6 +13,7 @@ import {
 } from '@immich/sql-tools';
 import { UpdatedAtTrigger, UpdateIdColumn } from 'src/decorators';
 import { person_delete_audit } from 'src/schema/functions';
+import { AssetTable } from 'src/schema/tables/asset.table';
 import { AssetFaceTable } from 'src/schema/tables/asset-face.table';
 import { UserTable } from 'src/schema/tables/user.table';
 
@@ -63,6 +64,15 @@ export class PersonTable {
 
   @Column({ type: 'character varying', nullable: true, default: null })
   color!: string | null;
+
+  @Column({ type: 'timestamp with time zone', nullable: true, default: null, index: true })
+  firstSeenAt!: Timestamp | null;
+
+  @Column({ type: 'timestamp with time zone', nullable: true, default: null, index: true })
+  lastSeenAt!: Timestamp | null;
+
+  @ForeignKeyColumn(() => AssetTable, { onDelete: 'SET NULL', onUpdate: 'CASCADE', nullable: true })
+  firstSeenAssetId!: string | null;
 
   @UpdateIdColumn({ index: true })
   updateId!: Generated<string>;

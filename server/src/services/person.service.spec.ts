@@ -40,9 +40,13 @@ describe(PersonService.name, () => {
       const [person, hiddenPerson] = [PersonFactory.create(), PersonFactory.create({ isHidden: true })];
 
       mocks.person.getAllForUser.mockResolvedValue({
-        items: [person, hiddenPerson],
+        items: [
+          { ...person, tagIds: null },
+          { ...hiddenPerson, tagIds: null },
+        ],
         hasNextPage: false,
       });
+      mocks.person.getDefaultHiddenTagIds.mockResolvedValue([]);
       mocks.person.getNumberOfPeople.mockResolvedValue({ total: 2, hidden: 1 });
       await expect(sut.getAll(auth, { withHidden: true, page: 1, size: 10 })).resolves.toEqual({
         hasNextPage: false,
@@ -56,10 +60,11 @@ describe(PersonService.name, () => {
           }),
         ],
       });
-      expect(mocks.person.getAllForUser).toHaveBeenCalledWith({ skip: 0, take: 10 }, auth.user.id, {
-        minimumFaceCount: 3,
-        withHidden: true,
-      });
+      expect(mocks.person.getAllForUser).toHaveBeenCalledWith(
+        { skip: 0, take: 10 },
+        auth.user.id,
+        expect.objectContaining({ minimumFaceCount: 3, withHidden: true }),
+      );
     });
 
     it('should get all visible people and favorites should be first in the array', async () => {
@@ -67,9 +72,13 @@ describe(PersonService.name, () => {
       const [isFavorite, person] = [PersonFactory.create({ isFavorite: true }), PersonFactory.create()];
 
       mocks.person.getAllForUser.mockResolvedValue({
-        items: [isFavorite, person],
+        items: [
+          { ...isFavorite, tagIds: null },
+          { ...person, tagIds: null },
+        ],
         hasNextPage: false,
       });
+      mocks.person.getDefaultHiddenTagIds.mockResolvedValue([]);
       mocks.person.getNumberOfPeople.mockResolvedValue({ total: 2, hidden: 1 });
       await expect(sut.getAll(auth, { withHidden: false, page: 1, size: 10 })).resolves.toEqual({
         hasNextPage: false,
@@ -83,10 +92,11 @@ describe(PersonService.name, () => {
           expect.objectContaining({ id: person.id, isFavorite: false }),
         ],
       });
-      expect(mocks.person.getAllForUser).toHaveBeenCalledWith({ skip: 0, take: 10 }, auth.user.id, {
-        minimumFaceCount: 3,
-        withHidden: false,
-      });
+      expect(mocks.person.getAllForUser).toHaveBeenCalledWith(
+        { skip: 0, take: 10 },
+        auth.user.id,
+        expect.objectContaining({ minimumFaceCount: 3, withHidden: false }),
+      );
     });
   });
 

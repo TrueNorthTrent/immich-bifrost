@@ -46,6 +46,8 @@ const MergePersonSchema = z
   })
   .meta({ id: 'MergePersonDto' });
 
+const PeopleSortBySchema = z.enum(['default', 'name', 'firstSeen', 'lastSeen']);
+
 const PersonSearchSchema = z
   .object({
     withHidden: stringToBool.optional().describe('Include hidden people'),
@@ -53,6 +55,22 @@ const PersonSearchSchema = z
     closestAssetId: z.uuidv4().optional().describe('Closest asset ID for similarity search'),
     page: z.coerce.number().int().min(1).default(1).describe('Page number for pagination'),
     size: z.coerce.number().int().min(1).max(1000).default(500).describe('Number of items per page'),
+    sortBy: PeopleSortBySchema.optional().describe('Sort order for people'),
+    sortOrder: z.enum(['asc', 'desc']).optional().describe('Sort direction'),
+    year: z.coerce.number().int().min(1900).max(2200).optional().describe('Only people seen during this calendar year'),
+    tagIds: z
+      .union([z.uuidv4(), z.array(z.uuidv4())])
+      .transform((v) => (Array.isArray(v) ? v : [v]))
+      .optional()
+      .describe('Only return people in any of these tag IDs'),
+    excludeTagIds: z
+      .union([z.uuidv4(), z.array(z.uuidv4())])
+      .transform((v) => (Array.isArray(v) ? v : [v]))
+      .optional()
+      .describe('Exclude people that are in any of these tag IDs'),
+    overrideDefaultHidden: stringToBool
+      .optional()
+      .describe('If true, ignore the auto-hide of tags flagged defaultHidden'),
   })
   .meta({ id: 'PersonSearchDto' });
 
@@ -81,6 +99,20 @@ export const PersonResponseSchema = z
       .optional()
       .describe('Person color (hex)')
       .meta(new HistoryBuilder().added('v1.126.0').stable('v2').getExtensions()),
+    firstSeenAt: z
+      .string()
+      .meta({ format: 'date-time' })
+      .nullable()
+      .optional()
+      .describe('Earliest known asset date for this person'),
+    lastSeenAt: z
+      .string()
+      .meta({ format: 'date-time' })
+      .nullable()
+      .optional()
+      .describe('Most recent known asset date for this person'),
+    firstSeenAssetId: z.string().nullable().optional().describe('Asset ID of the oldest photo of this person'),
+    tagIds: z.array(z.string()).optional().describe('Person tag IDs this person belongs to'),
   })
   .meta({ id: 'PersonResponseDto' });
 
@@ -169,7 +201,9 @@ const PeopleResponseSchema = z
   .describe('People response');
 export class PeopleResponseDto extends createZodDto(PeopleResponseSchema) {}
 
-export function mapPerson(person: MaybeDehydrated<Person>): PersonResponseDto {
+export function mapPerson(
+  person: MaybeDehydrated<Person> & { tagIds?: string[] | null },
+): PersonResponseDto {
   return {
     id: person.id,
     name: person.name,
@@ -179,6 +213,10 @@ export function mapPerson(person: MaybeDehydrated<Person>): PersonResponseDto {
     isFavorite: person.isFavorite,
     color: person.color ?? undefined,
     updatedAt: asDateString(person.updatedAt),
+    firstSeenAt: asDateString(person.firstSeenAt),
+    lastSeenAt: asDateString(person.lastSeenAt),
+    firstSeenAssetId: person.firstSeenAssetId ?? null,
+    tagIds: person.tagIds ?? undefined,
   };
 }
 

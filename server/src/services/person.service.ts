@@ -49,7 +49,19 @@ import { Point, transformPoints } from 'src/utils/transform';
 @Injectable()
 export class PersonService extends BaseService {
   async getAll(auth: AuthDto, dto: PersonSearchDto): Promise<PeopleResponseDto> {
-    const { withHidden = false, closestAssetId, closestPersonId, page, size } = dto;
+    const {
+      withHidden = false,
+      closestAssetId,
+      closestPersonId,
+      page,
+      size,
+      sortBy,
+      sortOrder,
+      year,
+      tagIds,
+      excludeTagIds,
+      overrideDefaultHidden,
+    } = dto;
     let closestFaceAssetId = closestAssetId;
     const pagination = {
       take: size,
@@ -63,11 +75,30 @@ export class PersonService extends BaseService {
       }
       closestFaceAssetId = person.faceAssetId;
     }
+
+    // Auto-exclude people in any tag marked defaultHidden, unless explicitly overridden
+    // or unless those tags are part of the active filter.
+    let effectiveExclude = excludeTagIds ? [...excludeTagIds] : [];
+    if (!overrideDefaultHidden) {
+      const defaultHiddenTagIds = (await this.personRepository.getDefaultHiddenTagIds(auth.user.id)).map((t) => t.id);
+      const activeFilterSet = new Set(tagIds ?? []);
+      for (const hiddenTagId of defaultHiddenTagIds) {
+        if (!activeFilterSet.has(hiddenTagId) && !effectiveExclude.includes(hiddenTagId)) {
+          effectiveExclude.push(hiddenTagId);
+        }
+      }
+    }
+
     const { machineLearning } = await this.getConfig({ withCache: false });
     const { items, hasNextPage } = await this.personRepository.getAllForUser(pagination, auth.user.id, {
       minimumFaceCount: machineLearning.facialRecognition.minFaces,
       withHidden,
       closestFaceAssetId,
+      sortBy,
+      sortOrder,
+      year,
+      tagIds,
+      excludeTagIds: effectiveExclude.length > 0 ? effectiveExclude : undefined,
     });
     const { total, hidden } = await this.personRepository.getNumberOfPeople(auth.user.id);
 

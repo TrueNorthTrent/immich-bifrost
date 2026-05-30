@@ -24,6 +24,9 @@ export class PersonFactory {
       thumbnailPath: '/data/thumbs/person-thumbnail.jpg',
       updatedAt: newDate(),
       updateId: newUuidV7(),
+      firstSeenAt: null,
+      lastSeenAt: null,
+      firstSeenAssetId: null,
       ...dto,
     });
   }

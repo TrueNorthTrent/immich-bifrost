@@ -1138,6 +1138,7 @@ export enum ApiTag {
   NotificationsAdmin = 'Notifications (admin)',
   Partners = 'Partners',
   People = 'People',
+  PersonTags = 'Person tags',
   Plugins = 'Plugins',
   Queues = 'Queues',
   Search = 'Search',

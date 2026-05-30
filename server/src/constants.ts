@@ -163,6 +163,8 @@ export const endpointTags: Record<ApiTag, string> = {
   [ApiTag.Partners]: 'A partner is a link with another user that allows sharing of assets between two users.',
   [ApiTag.People]:
     'A person is a collection of faces, which can be favorited and named. A person can also be merged into another person. People are automatically created via the face recognition job.',
+  [ApiTag.PersonTags]:
+    'Per-user labels (e.g. Family, Friends) for grouping people. Tags may have a single level of sub-tags and can default to hiding members from the people list.',
   [ApiTag.Plugins]:
     'A plugin is an installed module that makes filters and actions available for the workflow feature.',
   [ApiTag.Queues]:
