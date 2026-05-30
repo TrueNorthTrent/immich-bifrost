@@ -16,9 +16,18 @@
   import { handlePromiseError } from '$lib/utils';
   import { handleError } from '$lib/utils/handle-error';
   import { clearQueryParam } from '$lib/utils/navigation';
-  import { getAllPeople, getPerson, searchPerson, updatePerson, type PersonResponseDto } from '@immich/sdk';
+  import { getPerson, searchPerson, updatePerson, type PersonResponseDto } from '@immich/sdk';
+  import {
+    fetchPeopleExtended,
+    type PeopleSortBy,
+    type PersonResponseExtended,
+    type PersonTagDto,
+    type SortOrder,
+  } from '$lib/services/person-tag';
+  import PersonTagSidebar from './PersonTagSidebar.svelte';
+  import PersonTagPicker from './PersonTagPicker.svelte';
   import { Button, Icon, modalManager, toastManager } from '@immich/ui';
-  import { mdiAccountOff, mdiEyeOutline } from '@mdi/js';
+  import { mdiAccountOff, mdiEyeOutline, mdiTagOutline } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
@@ -40,6 +49,12 @@
   let searchedPeopleLocal: PersonResponseDto[] = $state([]);
   let innerHeight = $state(0);
   let searchPeopleElement = $state<ReturnType<typeof SearchPeople>>();
+  let sortBy = $state<PeopleSortBy>(data.filters.sortBy);
+  let sortOrder = $state<SortOrder>(data.filters.sortOrder);
+  let selectedTagIds = $state<string[]>(data.filters.tagIds);
+  let overrideDefaultHidden = $state<boolean>(data.filters.overrideDefaultHidden);
+  let tags = $state<PersonTagDto[]>(data.tags);
+  let tagPickerPerson = $state<PersonResponseExtended | null>(null);
 
   onMount(() => {
     const getSearchedPeople = $page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
@@ -71,7 +86,14 @@
           handlePromiseError(
             Promise.all(
               Array.from({ length: pagesToLoad }).map((_, i) => {
-                return getAllPeople({ withHidden: true, page: startingPage + i });
+                return fetchPeopleExtended({
+                  withHidden: true,
+                  page: startingPage + i,
+                  sortBy,
+                  sortOrder,
+                  tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
+                  overrideDefaultHidden,
+                });
               }),
             ).then((pages) => {
               for (const page of pages) {
@@ -95,7 +117,14 @@
     }
 
     try {
-      const { people: newPeople, hasNextPage } = await getAllPeople({ withHidden: true, page: nextPage });
+      const { people: newPeople, hasNextPage } = await fetchPeopleExtended({
+        withHidden: true,
+        page: nextPage,
+        sortBy,
+        sortOrder,
+        tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
+        overrideDefaultHidden,
+      });
       people = people.concat(newPeople);
       if (nextPage !== null) {
         currentPage = nextPage;
@@ -208,7 +237,69 @@
     await clearQueryParam(QueryParameter.SEARCHED_PEOPLE, $page.url);
   };
 
-  let people = $derived(data.people.people);
+  const applyFilters = async () => {
+    const url = new URL($page.url);
+    url.searchParams.delete('sortBy');
+    url.searchParams.delete('sortOrder');
+    url.searchParams.delete('tagId');
+    url.searchParams.delete('all');
+    if (sortBy !== 'default') url.searchParams.set('sortBy', sortBy);
+    if (sortOrder !== 'desc') url.searchParams.set('sortOrder', sortOrder);
+    for (const id of selectedTagIds) url.searchParams.append('tagId', id);
+    if (overrideDefaultHidden) url.searchParams.set('all', '1');
+    sessionStorage.removeItem(SessionStorageKey.INFINITE_SCROLL_PAGE);
+    await goto(url, { keepFocus: true, noScroll: false, invalidateAll: true });
+  };
+
+  const onSortChange = async (event: Event) => {
+    sortBy = (event.target as HTMLSelectElement).value as PeopleSortBy;
+    if (sortBy === 'name') {
+      sortOrder = 'asc';
+    } else if (sortBy === 'firstSeen' || sortBy === 'lastSeen') {
+      sortOrder = 'desc';
+    }
+    await applyFilters();
+  };
+
+  const onToggleTag = async (tagId: string) => {
+    selectedTagIds = selectedTagIds.includes(tagId)
+      ? selectedTagIds.filter((id) => id !== tagId)
+      : [...selectedTagIds, tagId];
+    await applyFilters();
+  };
+
+  const onClearTags = async () => {
+    if (selectedTagIds.length === 0 && !overrideDefaultHidden) return;
+    selectedTagIds = [];
+    overrideDefaultHidden = false;
+    await applyFilters();
+  };
+
+  const onToggleAll = async () => {
+    overrideDefaultHidden = !overrideDefaultHidden;
+    await applyFilters();
+  };
+
+  const onOpenTagPicker = (person: PersonResponseExtended) => {
+    tagPickerPerson = person;
+  };
+
+  const onTagsSavedForPerson = (personId: string, tagIds: string[]) => {
+    people = people.map((p) => (p.id === personId ? { ...p, tagIds } : p));
+    tagPickerPerson = null;
+  };
+
+  const onTagsChanged = (updated: PersonTagDto[]) => {
+    tags = updated;
+  };
+
+  let people = $state<PersonResponseExtended[]>(data.people.people);
+
+  $effect(() => {
+    people = data.people.people;
+    nextPage = data.people.hasNextPage ? 2 : null;
+    tags = data.tags;
+  });
 
   let visiblePeople = $derived(people.filter((people) => !people.isHidden));
   let countVisiblePeople = $derived(searchName ? searchedPeopleLocal.length : data.people.total - data.people.hidden);
@@ -325,6 +416,17 @@
             />
           </div>
         </div>
+        <select
+          class="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm dark:border-gray-700 dark:bg-immich-dark-gray dark:text-white"
+          value={sortBy}
+          onchange={onSortChange}
+          aria-label="Sort people"
+        >
+          <option value="default">Most faces</option>
+          <option value="name">Name (A–Z)</option>
+          <option value="lastSeen">Recently seen</option>
+          <option value="firstSeen">First seen (oldest)</option>
+        </select>
         <Button
           leadingIcon={mdiEyeOutline}
           onclick={() => goto('/people/manage')}
@@ -335,6 +437,16 @@
       </div>
     {/if}
   {/snippet}
+
+  <PersonTagSidebar
+    {tags}
+    {selectedTagIds}
+    {overrideDefaultHidden}
+    onToggle={onToggleTag}
+    onClear={onClearTags}
+    onToggleAll={onToggleAll}
+    onTagsChanged={onTagsChanged}
+  />
 
   {#if countVisiblePeople > 0 && (!searchName || searchedPeopleLocal.length > 0)}
     <PeopleInfiniteScroll people={showPeople} hasNextPage={!!nextPage && !searchName} {loadNextPage}>
@@ -359,6 +471,22 @@
             onfocusout={() => onNameChangeSubmit(newName, person)}
             oninput={(event) => onNameChangeInputUpdate(event)}
           />
+
+          <button
+            type="button"
+            class="mt-1 flex w-full items-center justify-center gap-1 rounded-md py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-immich-primary dark:hover:bg-immich-dark-primary/20 dark:hover:text-immich-dark-primary"
+            onclick={() => onOpenTagPicker(person as PersonResponseExtended)}
+            aria-label="Edit tags"
+          >
+            <Icon icon={mdiTagOutline} size="0.9em" />
+            <span>
+              {((person as PersonResponseExtended).tagIds?.length ?? 0) === 0
+                ? 'Tag'
+                : `${(person as PersonResponseExtended).tagIds!.length} tag${
+                    (person as PersonResponseExtended).tagIds!.length === 1 ? '' : 's'
+                  }`}
+            </span>
+          </button>
         </div>
       {/snippet}
     </PeopleInfiniteScroll>
@@ -371,5 +499,15 @@
         </p>
       </div>
     </div>
+  {/if}
+
+  {#if tagPickerPerson}
+    <PersonTagPicker
+      person={tagPickerPerson}
+      {tags}
+      onClose={() => (tagPickerPerson = null)}
+      onSaved={onTagsSavedForPerson}
+      onTagsChanged={onTagsChanged}
+    />
   {/if}
 </UserPageLayout>
